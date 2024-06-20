@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:signup/large_signUp.dart';
-import 'signUp.dart'; // Assuming signUp.dart is the file containing LargeSignUp
+import 'signUp.dart';
 
 void main() {
   runApp(MyApp());

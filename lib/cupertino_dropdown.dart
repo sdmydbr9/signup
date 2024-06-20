@@ -5,12 +5,14 @@ class CupertinoDropdown extends StatefulWidget {
   final List<String> items;
   final ValueChanged<String> onSelected;
   final bool enabled;
+  final String? label;
 
   CupertinoDropdown({
     required this.controller,
     required this.items,
     required this.onSelected,
     this.enabled = true,
+    this.label,
   });
 
   @override
@@ -18,6 +20,26 @@ class CupertinoDropdown extends StatefulWidget {
 }
 
 class _CupertinoDropdownState extends State<CupertinoDropdown> {
+  late String dropdownLabel;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final parentRow = context.findAncestorWidgetOfExactType<Row>();
+    final container = parentRow?.children
+        .firstWhere((child) => child is Container) as Container?;
+    final textWidget = container?.child as Text?;
+    final containerText = textWidget?.data;
+
+    if (widget.label == null && containerText == null) {
+      dropdownLabel = 'Select an option';
+    } else if (widget.label != null && containerText != null) {
+      dropdownLabel = containerText;
+    } else {
+      dropdownLabel = widget.label ?? containerText!;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -26,7 +48,7 @@ class _CupertinoDropdownState extends State<CupertinoDropdown> {
         absorbing: true,
         child: CupertinoTextField(
           controller: widget.controller,
-          placeholder: 'Select an option',
+          placeholder: dropdownLabel,
           enabled: widget.enabled,
           decoration: BoxDecoration(
             border: Border.all(
