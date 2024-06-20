@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'signUp.dart';
+import 'package:signup/large_signUp.dart';
+import 'signUp.dart'; // Assuming signUp.dart is the file containing LargeSignUp
 
 void main() {
   runApp(MyApp());
@@ -8,15 +9,20 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    print('Building MyApp widget');
     return CupertinoApp(
       title: 'Country, State, City Selector',
       initialRoute: '/',
       routes: {
-        '/': (context) => SignupScreen(),
+        '/': (context) =>
+            LargeSignUp(), // Ensure the correct reference to LargeSignUp
       },
       builder: (context, child) {
         final brightness = MediaQuery.of(context).platformBrightness;
         final isDarkMode = brightness == Brightness.dark;
+
+        // Example of printing where the null check operator is used
+        print('Inside MyApp builder with brightness: $brightness');
 
         return CupertinoTheme(
           data: CupertinoThemeData(
@@ -40,7 +46,7 @@ class MyApp extends StatelessWidget {
               ),
             ),
           ),
-          child: child!,
+          child: child ?? Container(),
         );
       },
     );

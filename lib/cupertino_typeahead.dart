@@ -1,107 +1,107 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class CupertinoTypeAhead<T> extends StatefulWidget {
+class CupertinoTypeAhead extends StatefulWidget {
   final TextEditingController controller;
-  final Future<List<T>> Function(String) suggestionsCallback;
-  final Widget Function(BuildContext, T) itemBuilder;
-  final void Function(T) onSuggestionSelected;
+  final List<String> suggestions;
+  final ValueChanged<String> onSelected;
+  final Duration debounceDuration;
 
-  const CupertinoTypeAhead({
+  CupertinoTypeAhead({
     required this.controller,
-    required this.suggestionsCallback,
-    required this.itemBuilder,
-    required this.onSuggestionSelected,
+    required this.suggestions,
+    required this.onSelected,
+    this.debounceDuration = const Duration(milliseconds: 300),
   });
 
   @override
-  _CupertinoTypeAheadState<T> createState() => _CupertinoTypeAheadState<T>();
+  _CupertinoTypeAheadState createState() => _CupertinoTypeAheadState();
 }
 
-class _CupertinoTypeAheadState<T> extends State<CupertinoTypeAhead<T>> {
-  List<T> _suggestions = [];
-  bool _isFetchingSuggestions = false;
+class _CupertinoTypeAheadState extends State<CupertinoTypeAhead> {
+  final FocusNode _focusNode = FocusNode();
+  List<String> _filteredSuggestions = [];
+  bool _isSuggestionsVisible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onTextChanged);
+    _focusNode.addListener(_onFocusChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    _focusNode.removeListener(_onFocusChanged);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    if (widget.controller.text.isEmpty) {
+      setState(() {
+        _isSuggestionsVisible = false;
+        _filteredSuggestions = [];
+      });
+      return;
+    }
+
+    setState(() {
+      _filteredSuggestions = widget.suggestions
+          .where((suggestion) => suggestion
+              .toLowerCase()
+              .contains(widget.controller.text.toLowerCase()))
+          .toList();
+      _isSuggestionsVisible = _filteredSuggestions.isNotEmpty;
+    });
+  }
+
+  void _onFocusChanged() {
+    setState(() {
+      _isSuggestionsVisible =
+          _focusNode.hasFocus && _filteredSuggestions.isNotEmpty;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CupertinoFormRow(
-          child: CupertinoTextField(
-            controller: widget.controller,
-            placeholder: 'Type to search',
-            onChanged: _onChanged,
-            clearButtonMode: OverlayVisibilityMode.editing,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16.0),
-              color: CupertinoColors.white,
-              border: Border.all(color: CupertinoColors.lightBackgroundGray),
+        CupertinoTextField(
+          controller: widget.controller,
+          focusNode: _focusNode,
+          placeholder: 'Type a vegetable name',
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: CupertinoColors.inactiveGray,
+              width: 0.5,
             ),
+            borderRadius: BorderRadius.circular(5.0),
           ),
         ),
-        if (_isFetchingSuggestions)
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: CupertinoActivityIndicator(),
-          ),
-        if (!_isFetchingSuggestions && _suggestions.isNotEmpty)
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12.0),
-              color: CupertinoColors.white.withOpacity(0.7),
-            ),
-            child: CupertinoScrollbar(
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: _suggestions.length,
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      widget.onSuggestionSelected(_suggestions[index]);
-                      setState(() {
-                        _suggestions.clear();
-                      });
-                    },
-                    child: ListTile(
-                      title: widget.itemBuilder(context, _suggestions[index]),
-                    ),
-                  );
-                },
-                separatorBuilder: (context, index) => Divider(
-                  color: CupertinoColors.lightBackgroundGray,
-                  height: 1.0,
-                ),
-              ),
+        if (_isSuggestionsVisible)
+          Material(
+            color: Colors.transparent,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _filteredSuggestions.length,
+              itemBuilder: (context, index) {
+                final suggestion = _filteredSuggestions[index];
+                return ListTile(
+                  title: Text(suggestion),
+                  onTap: () {
+                    widget.controller.text = suggestion;
+                    widget.onSelected(suggestion);
+                    setState(() {
+                      _isSuggestionsVisible = false;
+                    });
+                  },
+                );
+              },
             ),
           ),
       ],
     );
-  }
-
-  void _onChanged(String value) async {
-    setState(() {
-      _isFetchingSuggestions = true;
-      _suggestions.clear();
-    });
-
-    try {
-      if (value.isNotEmpty && _hasAlphabetCharacters(value)) {
-        List<T> suggestions = await widget.suggestionsCallback(value);
-        setState(() {
-          _suggestions = suggestions;
-        });
-      }
-    } catch (e) {
-      print('Error fetching suggestions: $e');
-    } finally {
-      setState(() {
-        _isFetchingSuggestions = false;
-      });
-    }
-  }
-
-  bool _hasAlphabetCharacters(String text) {
-    return RegExp(r'[a-zA-Z]').hasMatch(text);
   }
 }
