@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) =>
-            LargeSignUp(), // Ensure the correct reference to LargeSignUp
+            SignupScreen(), // Ensure the correct reference to LargeSignUp
       },
       builder: (context, child) {
         final brightness = MediaQuery.of(context).platformBrightness;
