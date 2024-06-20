@@ -6,12 +6,14 @@ class CupertinoTypeAhead extends StatefulWidget {
   final List<String> suggestions;
   final ValueChanged<String> onSelected;
   final Duration debounceDuration;
+  final bool enabled;
 
   CupertinoTypeAhead({
     required this.controller,
     required this.suggestions,
     required this.onSelected,
     this.debounceDuration = const Duration(milliseconds: 300),
+    this.enabled = true,
   });
 
   @override
@@ -22,6 +24,7 @@ class _CupertinoTypeAheadState extends State<CupertinoTypeAhead> {
   final FocusNode _focusNode = FocusNode();
   List<String> _filteredSuggestions = [];
   bool _isSuggestionsVisible = false;
+  bool _shouldNotify = true;
 
   @override
   void initState() {
@@ -39,7 +42,9 @@ class _CupertinoTypeAheadState extends State<CupertinoTypeAhead> {
   }
 
   void _onTextChanged() {
-    if (widget.controller.text.isEmpty) {
+    if (!_shouldNotify) return;
+
+    if (widget.controller.text.isEmpty || !widget.enabled) {
       setState(() {
         _isSuggestionsVisible = false;
         _filteredSuggestions = [];
@@ -59,8 +64,22 @@ class _CupertinoTypeAheadState extends State<CupertinoTypeAhead> {
 
   void _onFocusChanged() {
     setState(() {
-      _isSuggestionsVisible =
-          _focusNode.hasFocus && _filteredSuggestions.isNotEmpty;
+      _isSuggestionsVisible = _focusNode.hasFocus &&
+          _filteredSuggestions.isNotEmpty &&
+          widget.enabled;
+    });
+  }
+
+  void _onSuggestionSelected(String suggestion) {
+    _shouldNotify = false;
+    widget.controller.text = suggestion;
+    widget.onSelected(suggestion);
+    setState(() {
+      _isSuggestionsVisible = false;
+    });
+    widget.controller.notifyListeners();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _shouldNotify = true;
     });
   }
 
@@ -71,7 +90,8 @@ class _CupertinoTypeAheadState extends State<CupertinoTypeAhead> {
         CupertinoTextField(
           controller: widget.controller,
           focusNode: _focusNode,
-          placeholder: 'Type a vegetable name',
+          placeholder: 'Type a name',
+          enabled: widget.enabled,
           decoration: BoxDecoration(
             border: Border.all(
               color: CupertinoColors.inactiveGray,
@@ -79,6 +99,11 @@ class _CupertinoTypeAheadState extends State<CupertinoTypeAhead> {
             ),
             borderRadius: BorderRadius.circular(5.0),
           ),
+          onTap: () {
+            setState(() {
+              _isSuggestionsVisible = _filteredSuggestions.isNotEmpty;
+            });
+          },
         ),
         if (_isSuggestionsVisible)
           Material(
@@ -91,11 +116,8 @@ class _CupertinoTypeAheadState extends State<CupertinoTypeAhead> {
                 return ListTile(
                   title: Text(suggestion),
                   onTap: () {
-                    widget.controller.text = suggestion;
-                    widget.onSelected(suggestion);
-                    setState(() {
-                      _isSuggestionsVisible = false;
-                    });
+                    _onSuggestionSelected(suggestion);
+                    FocusScope.of(context).unfocus();
                   },
                 );
               },
