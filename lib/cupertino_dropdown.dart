@@ -48,7 +48,6 @@ class _CupertinoDropdownState extends State<CupertinoDropdown> {
           width: MediaQuery.of(context).size.width * 0.6,
           height: MediaQuery.of(context).size.height * 0.6,
           child: CupertinoActionSheet(
-            title: Text('Select an option'),
             actions: [
               Container(
                 height: MediaQuery.of(context).size.height * 0.45,
@@ -67,11 +66,11 @@ class _CupertinoDropdownState extends State<CupertinoDropdown> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Padding(
-                              padding: EdgeInsets.symmetric(vertical: 8.0),
+                              padding: EdgeInsets.symmetric(vertical: 2.0),
                               child: Text(value, textAlign: TextAlign.center),
                             ),
                             Container(
-                              height: 0.5,
+                              height: 0.25,
                               color: CupertinoColors.separator.withOpacity(0.2),
                             ),
                           ],

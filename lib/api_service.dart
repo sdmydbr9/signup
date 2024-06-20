@@ -40,9 +40,11 @@ class ApiService {
     final countryId = data['id'];
     final stateResponse = await _getWithFallback('/state?countryid=$countryId');
     final stateData = json.decode(stateResponse.body);
-    return List<Map<String, dynamic>>.from(stateData['states'])
+    final states = List<Map<String, dynamic>>.from(stateData['states'])
         .map((state) => state['name'].toString())
         .toList();
+    states.sort();
+    return states;
   }
 
   static Future<List<String>> fetchCities(String country, String state) async {
